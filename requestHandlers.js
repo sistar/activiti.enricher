@@ -31,7 +31,7 @@ var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post }
 
 function proxy(response, postData, parsedUrl, request, modifierFunction){
     var response = response;
-    console.log("Request handler '"+parsedUrl.pathname+"' was called. with query '"+ parsedUrl.search +"' for method :"+request.method );
+    console.log("Request handler '"+parsedUrl.pathname+"' was called. with query '"+ parsedUrl.search + "' and data '" + postData + "' for method :"+request.method );
     response.writeHead(200, {"Content-Type": "text/json"});
     var myOpts = {  username: realm['userId'],
                     password: realm['password']
