@@ -1,0 +1,4 @@
+Your server activiti.enricher is now ready.
+  IP Address: 50.57.88.80
+  Root password: activiti.enricherB0dbVV2x1
+
