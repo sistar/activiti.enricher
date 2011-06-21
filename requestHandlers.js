@@ -56,20 +56,19 @@ function proxy(response, postData, parsedUrl, request, modifierFunction){
 function handle_credentials (jsonString) {
   console.log('>>credentials string' + jsonString);
   credentials = JSON.parse(jsonString);
-  console.log('>>login credentials USERID' + credentials["userId"]);
-  console.log('>>login credentials password' + credentials["password"]);
+  console.log('>>login credentials USERID ' + credentials["userId"]);
+  console.log('>>login credentials password ' + credentials["password"]);
 }
 
 function proxy_target_call (response, postData, parsedUrl, request) {
   
   try {   
-    proxy(response,postData, parsedUrl, request, function(data) { 
+    proxy(response,postData, parsedUrl, request, function(data) {
       if(data['status'] !== undefined){
         response.writeHead(data['status']['code'], {"Content-Type": "text/json"});   
       } else {
-        console.log(util.inspect(data));
-        response.writeHead(500, {"Content-Type": "text/json"}); 
-        response.end();
+        console.log(util.inspect(response));
+        response.writeHead(200, {"Content-Type": "text/json"}); 
       }
       response.write(JSON.stringify(data));
       response.end(); 
@@ -129,7 +128,7 @@ exports.processDefinition = upload;
 exports.processInstance = upload;
 exports.processInstances = upload;
 exports.tasksSummary = upload;
-exports.groups = upload;
+exports.group = upload;
 exports.tasks = tasks;
 exports.task = upload;
 exports.login = login;

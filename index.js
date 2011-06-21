@@ -13,7 +13,7 @@ handle['/tasks-summary'] = requestHandlers.tasksSummary;
 handle['/tasks'] = requestHandlers.tasks;
 handle['/task'] = requestHandlers.task;
 handle['/login'] = requestHandlers.login;
-handle['/groups'] = requestHandlers.groups;
+handle['/group'] = requestHandlers.group;
 handle['/user'] = requestHandlers.user;
 
 

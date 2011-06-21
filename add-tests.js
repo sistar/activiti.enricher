@@ -20,9 +20,13 @@ suite.discuss('When using the API')
 //
 
 suite.use('localhost', 8109).setHeader('Content-Type', 'application/json')
+  .discuss('When using the activiti rest api login POST')
   .post('/login', {"userId": "kermit","password": "kermit"})
   .expect(200, {"success": true})
+  
+  .discuss('When querying the user kermit')
   .get('/user/kermit').expect(200,{"id":"kermit","firstName":"Kermit","lastName":"the Frog","email":"kermit@localhost"})
+  .discuss('When querying kermits groups')
   .get('/user/kermit/groups')
   .expect(200,{"data":[ {"id":"accountancy","name":"Accountancy","type":"assignment"},
                         {"id":"admin","name":"System administrator","type":"security-role"},
@@ -32,8 +36,18 @@ suite.use('localhost', 8109).setHeader('Content-Type', 'application/json')
                         {"id":"manager","name":"Manager","type":"security-role"},
                         {"id":"sales","name":"Sales","type":"assignment"}],
                         "total":7,"start":0,"sort":"id","order":"asc","size":7})
-  .get('/groups/bearbeiter/users')
-  .expect(200)
+  .discuss('When querying the users for group bearbeiter')
+  .get('/group/bearbeiter/users')
+  .expect(200,{ "data": [{"id": "kermit","firstName": "Kermit","lastName": "the Frog","email": "kermit@localhost"},
+  {"id": "sachbearbeiter","firstName": "","lastName": "","email": ""}],
+  "total": 2,
+  "start": 0,
+  "sort": "id",
+  "order": "asc",
+  "size": 2
+}
+
+)
   .get('process-definitions?start=0&size=10&sort=id&order=asc').expect(200)
   .get('/process-definition/RYLC:1:116')
   .expect(200, {"id":"RYLC:1:116","key":"RYLC","name":"Neues Fahrzeug reservieren",
