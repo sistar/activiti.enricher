@@ -26,7 +26,7 @@ function start(response,postData,parsedUrl) {
     response.end();
 
 }
-var u = 'http://localhost:8080/activiti-rest/service';
+var u = 'http://localhost:8095/activiti-rest/service';
 var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post }
 
 function proxy(response, postData, parsedUrl, request, modifierFunction){
@@ -39,7 +39,7 @@ function proxy(response, postData, parsedUrl, request, modifierFunction){
     if (request.method === 'POST'){
         myOpts['data'] = postData;
     } 
-    
+    console.log('writing data to response:' +util.inspect(myOpts));
     try { 
         http_methods[request.method](u+targetPath+parsedUrl.search,myOpts 
         )
@@ -47,6 +47,21 @@ function proxy(response, postData, parsedUrl, request, modifierFunction){
         .on('error',
             function(data){
              console.log("error with data: "+ util.inspect(data));
+              });
+    } catch (error) {
+        console.log(error);
+    }
+}
+function doLogin(){
+  try { 
+        
+        rest.post(u+'/login',{'data' : JSON.stringify(credentials)})
+        .on('complete', function(){
+             console.log("logged in as: "+ util.inspect(credentials));
+        })
+        .on('error',
+            function(data){
+             console.log("doLogin error with data: "+ util.inspect(data));
               });
     } catch (error) {
         console.log(error);
@@ -63,13 +78,14 @@ function handle_credentials (jsonString) {
 function proxy_target_call (response, postData, parsedUrl, request) {
   
   try {   
+    doLogin();
     proxy(response,postData, parsedUrl, request, function(data) {
       if(data['status'] !== undefined){
         response.writeHead(data['status']['code'], {"Content-Type": "text/json"});   
       } else {
-        console.log(util.inspect(response));
         response.writeHead(200, {"Content-Type": "text/json"}); 
       }
+      
       response.write(JSON.stringify(data));
       response.end(); 
     });
@@ -96,14 +112,11 @@ function login(response,postData,parsedUrl,request){
 
 function upload(response,postData,parsedUrl,request) {
 
-    proxy(response,postData, parsedUrl,request, function(data) {    
-            response.write(JSON.stringify(data));
-            response.end();
-        });        
+    proxy_target_call (response, postData, parsedUrl, request);
 }
 
 function tasks(response,postData,parsedUrl,request) {
-
+    doLogin();
     proxy(response,postData, parsedUrl,request, function(d) {    
     d['kundenname'] = 'DEF GmbH statisch';
     d['due-date'] = '2011-06-21';

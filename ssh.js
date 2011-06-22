@@ -1,9 +1,20 @@
 var spawn = require('child_process').spawn,
      fs = require('fs'),
-     sys = require('sys');
+     sys = require('sys'),
+     util = require('util');
 
-function ssh(username, host, file) {
-   fs.readFile(file, function (err, data) {
+function withCredentials(credentialFile,shellScript){
+   fs.readFile(credentialFile , function (err, data) {
+        if (err) throw err;
+        dObject = JSON.parse(data);
+        ssh('root', dObject.addresses.public[0], shellScript , dObject.adminPass)
+        console.log(dObject.adminPass);
+       });       
+}
+
+function ssh(username, host, shellScript, password) {
+  
+  fs.readFile(shellScript, function (err, data) {
      if (err) throw err;
 
      var hasPassword = false;
@@ -12,7 +23,7 @@ function ssh(username, host, file) {
      commands.pop();
      commands = commands.join(' && ');
     
-     var ssh = spawn('ssh', ['-q -l' + username, host, commands]);
+     var ssh = spawn('ssh', ['-ql' + username, host, commands]);
 
      ssh.on('exit', function (code, signal) {
        process.exit();
@@ -25,6 +36,8 @@ function ssh(username, host, file) {
          stdin.on('data', function (chunk) {
            ssh.stdin.write(chunk);
          });
+         //sh.stdin.write(password+'\n');
+         //process.stdout.write('wrote password.')
        }
 
        hasPassword = true;
@@ -35,7 +48,9 @@ function ssh(username, host, file) {
      });  
    });
  };
-exports.ssh = ssh;
-// var args = process.argv.slice(2);
-// sys.puts('Running commands from ' + args[1] + ' as root@' + args[0]);
-// ssh('root', args[0], args[1]);
+
+var args = process.argv.slice(1);
+var serverName = args[1] || 'activiti.enricher';
+var shellScript = args[2] || 'commands.sh'
+var credentialFile = process.env.HOME+'/'+serverName+'_rackspace.json';
+withCredentials(credentialFile,shellScript);
