@@ -26,7 +26,7 @@ function start(response,postData,parsedUrl) {
     response.end();
 
 }
-var u = 'http://localhost:8095/activiti-rest/service';
+var u = 'http://localhost:8080/activiti-rest/service';
 var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post }
 
 function proxy(response, postData, parsedUrl, request, modifierFunction){
@@ -79,16 +79,17 @@ function proxy_target_call (response, postData, parsedUrl, request) {
   
   try {   
     doLogin();
-    proxy(response,postData, parsedUrl, request, function(data) {
-      if(data['status'] !== undefined){
-        response.writeHead(data['status']['code'], {"Content-Type": "text/json"});   
+    proxy(response,postData, parsedUrl, request, function(data,clientResponse) {
+      console.log('look for Content-Type:'+util.inspect(clientResponse));
+      response.writeHead(clientResponse.statusCode, clientResponse.headers);   
+      if(clientResponse.headers['content-type'].indexOf('/json') >= 0){
+        response.write(JSON.stringify(data));
       } else {
-        response.writeHead(200, {"Content-Type": "text/json"}); 
+        response.write(data);
       }
-      
-      response.write(JSON.stringify(data));
-      response.end(); 
+      response.end();
     });
+    
 } catch (error){
     response.writeHead(500, {"Content-Type": "text/json"});  
     response.write('ERROR' + error);
@@ -118,8 +119,8 @@ function upload(response,postData,parsedUrl,request) {
 function tasks(response,postData,parsedUrl,request) {
     doLogin();
     proxy(response,postData, parsedUrl,request, function(d) {    
-    d['kundenname'] = 'DEF GmbH statisch';
-    d['due-date'] = '2011-06-21';
+    d['data']['kundenname'] = 'DEF GmbH statisch';
+    d['data']['due-date'] = '2011-06-21';
     d['metadata'] = [
    {'field-id': 'id', 'display-when': []},
    {'field-id': 'name', 'display-format':'upper-light', 'column-title':'Kunden Name','display-when': ['landscape']},
