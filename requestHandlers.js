@@ -30,7 +30,7 @@ var u = 'http://localhost:8080/activiti-rest/service';
 var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post }
 
 function proxy(response, postData, parsedUrl, request, modifierFunction){
-    var targetPath = parsedUrl.pathname.replace(/\/activiti-rest\/service\//,"/");
+    var targetPath = parsedUrl.pathname.replace(/\/enricher/,"").replace(/\/activiti-rest\/service\//,"/");
     console.log("Request handler '"+targetPath+"' was called. with query '"+ parsedUrl.search + "' and data '" + postData + "' for method :"+request.method );
   
     var myOpts = {  username: credentials['userId'],

@@ -1,7 +1,8 @@
 var requestHandlers = require("./requestHandlers"),util = require('util');
 function route(handle,parsedUrl, response, postData, request) {
 console.log(util.inspect(parsedUrl));
-   var p = parsedUrl.pathname.replace(/\/activiti-rest\/service\//,"/");
+   
+  var p = parsedUrl.pathname.replace(/\/enricher/,"").replace(/\/activiti-rest\/service\//,"/");
 
      p = '/'+p.split('/')[1];
     if (typeof handle[p] === 'function') {
