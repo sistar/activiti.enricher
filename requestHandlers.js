@@ -119,9 +119,13 @@ function upload(response,postData,parsedUrl,request) {
 function tasks(response,postData,parsedUrl,request) {
     doLogin();
     proxy(response,postData, parsedUrl,request, function(d) {    
-    d['data']['kundenname'] = 'DEF GmbH statisch';
-    d['data']['due-date'] = '2011-06-21';
-    d['metadata'] = [
+    for(var i in  d['data'])
+    {
+        ['kundenname'] = 'DEF GmbH statisch';
+        d['data']['due-date'] = '2011-06-21';
+    }
+   
+   d['metadata'] = [
    {'field-id': 'id', 'display-when': []},
    {'field-id': 'name', 'display-format':'upper-light', 'column-title':'Kunden Name','display-when': ['landscape']},
    {'field-id': 'kundenname', 'display-format':'middle-strong', 'column-title':'Kunden Name','display-when': ['landscape']},
