@@ -75,13 +75,17 @@ function handle_credentials (jsonString) {
   console.log('>>login credentials password ' + credentials["password"]);
 }
 
-function proxy_target_call (response, postData, parsedUrl, request) {
+function proxy_target_call (response, postData, parsedUrl, request, resultModifier) {
   
   try {   
     doLogin();
     proxy(response,postData, parsedUrl, request, function(data,clientResponse) {
       console.log('look for Content-Type:'+util.inspect(clientResponse));
-      response.writeHead(clientResponse.statusCode, clientResponse.headers);   
+      response.writeHead(clientResponse.statusCode, clientResponse.headers);
+      if (resultModifier !== undefined){
+        resultModifier(data);
+      }
+       
       if(clientResponse.headers['content-type'].indexOf('/json') >= 0){
         response.write(JSON.stringify(data));
       } else {
@@ -117,12 +121,12 @@ function upload(response,postData,parsedUrl,request) {
 }
 
 function tasks(response,postData,parsedUrl,request) {
-    doLogin();
-    proxy(response,postData, parsedUrl,request, function(d) {    
-    for(var i in  d['data'])
+    
+    proxy_target_call(response,postData, parsedUrl,request, function(d) {    
+    for(var i in  d.data)
     {
-        i['kundenname'] = 'DEF GmbH statisch';
-        i['due-date'] = '2011-06-21';
+        d.data[i]['kundenname'] = 'DEF GmbH statisch';
+        d.data[i]['due-date'] = '2011-06-21';
     }
    
    d['metadata'] = [
@@ -130,13 +134,8 @@ function tasks(response,postData,parsedUrl,request) {
    {'field-id': 'name', 'display-format':'upper-light', 'column-title':'Kunden Name','display-when': ['landscape']},
    {'field-id': 'kundenname', 'display-format':'middle-strong', 'column-title':'Kunden Name','display-when': ['landscape']},
    {'field-id': 'due-date', 'display-format':'lower-light', 'column-title':'Kunden Name','display-when': ['landscape','portrait']}
- 	];
- 	console.log(d['data']);
-            
- 	console.log(JSON.stringify(d));
-            response.write(JSON.stringify(d));
-            response.end();
-        });         
+ 	];}
+ 	);         
 }
 
 
