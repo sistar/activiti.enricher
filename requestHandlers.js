@@ -121,8 +121,8 @@ function tasks(response,postData,parsedUrl,request) {
     proxy(response,postData, parsedUrl,request, function(d) {    
     for(var i in  d['data'])
     {
-        ['kundenname'] = 'DEF GmbH statisch';
-        d['data']['due-date'] = '2011-06-21';
+        i['kundenname'] = 'DEF GmbH statisch';
+        i['due-date'] = '2011-06-21';
     }
    
    d['metadata'] = [
