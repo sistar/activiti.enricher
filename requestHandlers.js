@@ -125,7 +125,7 @@ function tasks(response,postData,parsedUrl,request) {
     proxy_target_call(response,postData, parsedUrl,request, function(d) {    
     for(var i in  d.data)
     {
-        d.data[i]['kundenname'] = 'DEF GmbH statisch';
+        d.data[i]['kundenname'] = 'DEF GmbH noch statisch';
         d.data[i]['due-date'] = '2011-06-21';
     }
    
