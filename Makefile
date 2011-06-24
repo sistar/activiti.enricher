@@ -1,3 +1,3 @@
 install :
-	sudo mkdir -p /data/apps/hello_world
-	sudo cp ./app.js /data/apps/hello_world/
+	sudo mkdir -p /data/apps/activti.enricher
+	sudo cp ./*.js /data/apps/activti.enricher/
