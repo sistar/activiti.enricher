@@ -34,10 +34,9 @@ function proxy(response, postData, parsedUrl, request, modifierFunction){
     console.log("Request handler '"+targetPath+"' was called. with query '"+ parsedUrl.search + "' and data '" + postData + "' for method :"+request.method );
   
     var myOpts = {  username: credentials['userId'],
-                    password: credentials['password']
+                    password: credentials['password'],
                     headers: { 'Content-Type': 'application/json' }
                  };
-    myOpts['content-type'] = 'application/json';
     if (request.method === 'POST' || request.method === 'PUT'  ){
         myOpts['data'] = postData;
     } 
