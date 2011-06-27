@@ -36,7 +36,7 @@ function proxy(response, postData, parsedUrl, request, modifierFunction){
     var myOpts = {  username: credentials['userId'],
                     password: credentials['password']
                  };
-    if (request.method === 'POST'){
+    if (request.method === 'POST' || request.method === 'PUT'  ){
         myOpts['data'] = postData;
     } 
     console.log('writing data to response:' +util.inspect(myOpts));
