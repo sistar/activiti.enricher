@@ -35,6 +35,7 @@ function proxy(response, postData, parsedUrl, request, modifierFunction){
   
     var myOpts = {  username: credentials['userId'],
                     password: credentials['password']
+                    Content-Type: 'application/json'
                  };
     if (request.method === 'POST' || request.method === 'PUT'  ){
         myOpts['data'] = postData;
