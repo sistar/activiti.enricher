@@ -45,7 +45,9 @@
    "dependencies": {
        "restler": "0.2.1",
        "api-easy": "0.2.3",
-       "vows": "0.5.8" 
+       "vows": "0.5.8",
+       "jasmine-node": "1.0.6"
+	 
    },
    "implements": [],
    "os": ["linux"],
