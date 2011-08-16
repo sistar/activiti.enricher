@@ -5,7 +5,10 @@ var sys = require('sys'),
     util = require('util'),
     events = require('events');
 
-var credentials = {};
+var credentials = {
+    "userId": "",
+    "password": ""
+};
 
 function start(response, postData, parsedUrl) {
     console.log("Request handler 'start' was called.");
@@ -27,36 +30,69 @@ function start(response, postData, parsedUrl) {
 
 }
 var u = 'http://localhost:8080/activiti-rest/service';
-var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post }
+var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post };
 
 function proxy(response, postData, parsedUrl, request, modifierFunction) {
     var targetPath = parsedUrl.pathname.replace(/\/enricher/, "").replace(/\/activiti-rest\/service\//, "/");
     console.log("Request handler '" + targetPath + "' was called. with query '" + parsedUrl.search + "' and data '" + postData + "' for method :" + request.method);
 
-    var myOpts = {
-        headers: { 'Content-Type': 'application/json',
-            'authorization': request.headers.authorization
+    if(request.headers['authorization'] != null) {
+        var header=request.headers['authorization']||'',        // get the header
+              token=header.split(/\s+/).pop()||'',            // and the encoded auth token
+              auth=new Buffer(token, 'base64').toString(),    // convert from base64
+              parts=auth.split(/:/),                          // split on colon
+              username64=parts[0],
+              password64=parts[1];
+        credentials.userId = username64;
+        credentials.password = password64;
+
+
+    }
+
+    if (credentials.userId == null || credentials.userId.length == 0) {
+        console.log("No credentials from /login found" + util.inspect(credentials['userId']));
+
+        /**
+         * HTTP/1.1 401 Unauthorized
+         < Server: Apache-Coyote/1.1
+         < WWW-Authenticate: Basic realm="Activiti"
+         < Content-Type: text/html;charset=utf-8
+         < Content-Length: 954
+         < Date: Tue, 16 Aug 2011 17:05:14 GMT
+
+         */
+
+        response.writeHead(401, {"Content-Type": "text/html",
+            "WWW-Authenticate": 'Basic realm="Activiti"'});
+        response.write("");
+        response.end();
+    } else {
+
+        var myOpts = {  username: credentials['userId'],
+            password: credentials['password'],
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (request.method === 'POST' || request.method === 'PUT') {
+            myOpts['data'] = postData;
         }
-    };
-    if (request.method === 'POST' || request.method === 'PUT') {
-        myOpts['data'] = postData;
+        console.log('writing data to response:' + util.inspect(myOpts));
+        try {
+            http_methods[request.method](u + targetPath + parsedUrl.search, myOpts
+            )
+                .on('complete', modifierFunction)
+                .on('error',
+                function(data) {
+                    console.log("error with data: " + util.inspect(data));
+                });
+        } catch (error) {
+            console.log(error);
+        }
     }
-    console.log('writing data to response:' + util.inspect(myOpts));
-    try {
-        http_methods[request.method](u + targetPath + parsedUrl.search, myOpts
-        )
-            .on('complete', modifierFunction)
-            .on('error',
-            function(data) {
-                console.log("error with data: " + util.inspect(data));
-            });
-    } catch (error) {
-        console.log(error);
-    }
+
 }
+
 function doLogin() {
     try {
-
         rest.post(u + '/login', {'data' : JSON.stringify(credentials)})
             .on('complete', function() {
                 console.log("logged in as: " + util.inspect(credentials));
@@ -70,14 +106,9 @@ function doLogin() {
     }
 }
 
-function handle_credentials(jsonString) {
-    credentials = JSON.parse(jsonString);
-}
-
 function proxy_target_call(response, postData, parsedUrl, request, resultModifier) {
 
     try {
-        //doLogin();
         proxy(response, postData, parsedUrl, request, function(data, clientResponse) {
             //console.log('look for Content-Type:' + util.inspect(clientResponse));
             response.writeHead(clientResponse.statusCode, clientResponse.headers);
@@ -104,10 +135,10 @@ function proxy_target_call(response, postData, parsedUrl, request, resultModifie
 
 function login(response, postData, parsedUrl, request) {
     try {
-        handle_credentials(postData);
+        credentials = JSON.parse(jsonString);
     } catch (error) {
         response.writeHead(400, {"Content-Type": "text/json"});
-        response.write('INVALID JSON:')
+        response.write('INVALID JSON:');
         response.write(postData);
         response.end();
     }
@@ -130,28 +161,29 @@ function processInstance(response, postData, parsedUrl, request) {
     self.postData = postData;
     self.parsedUrl = parsedUrl;
     self.request = request;
-    self.modifierFunction = function(d){  };
+    self.modifierFunction = function(d) {
+    };
 
-    function createDelegate(object, method){
-        return function(){
+    function createDelegate(object, method) {
+        return function() {
             method.apply(object, arguments)
         };
     }
 
     this.proceedFunction =
-        function (actData){
+        function (actData) {
             pO = JSON.parse(self.postData);
-            pO.businessKey = "ID_"+actData.maxKey;
+            pO.businessKey = "ID_" + actData.maxKey;
             self.postData = JSON.stringify(pO);
-            console.log('XXX'+self.postData);
-            proxy_target_call(self.response, self.postData, self.parsedUrl,self.request,self.modifierFunction);
-    }
+            console.log('XXX' + self.postData);
+            proxy_target_call(self.response, self.postData, self.parsedUrl, self.request, self.modifierFunction);
+        } ;
 
     if (isStartProcessInstanceCall(request)) {
-        counter.createUniqueBusinessKey( createDelegate(this,this.proceedFunction) );
+        counter.createUniqueBusinessKey(createDelegate(this, this.proceedFunction));
     } else {
         proxy_target_call.apply(self);
-        }
+    }
 }
 
 function isStartProcessInstanceCall(request) {
