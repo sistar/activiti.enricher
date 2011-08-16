@@ -5,10 +5,7 @@ var sys = require('sys'),
     util = require('util'),
     events = require('events');
 
-var credentials = {
-    "userId": "kermit",
-    "password": "kermit"
-};
+var credentials = {};
 
 function start(response, postData, parsedUrl) {
     console.log("Request handler 'start' was called.");
@@ -36,14 +33,15 @@ function proxy(response, postData, parsedUrl, request, modifierFunction) {
     var targetPath = parsedUrl.pathname.replace(/\/enricher/, "").replace(/\/activiti-rest\/service\//, "/");
     console.log("Request handler '" + targetPath + "' was called. with query '" + parsedUrl.search + "' and data '" + postData + "' for method :" + request.method);
 
-    var myOpts = {  username: credentials['userId'],
-        password: credentials['password'],
-        headers: { 'Content-Type': 'application/json' }
+    var myOpts = {
+        headers: { 'Content-Type': 'application/json',
+            'authorization': request.headers.authorization
+        }
     };
     if (request.method === 'POST' || request.method === 'PUT') {
         myOpts['data'] = postData;
     }
-    //console.log('writing data to response:' + util.inspect(myOpts));
+    console.log('writing data to response:' + util.inspect(myOpts));
     try {
         http_methods[request.method](u + targetPath + parsedUrl.search, myOpts
         )
@@ -73,16 +71,13 @@ function doLogin() {
 }
 
 function handle_credentials(jsonString) {
-    //console.log('>>credentials string' + jsonString);
     credentials = JSON.parse(jsonString);
-    //console.log('>>login credentials USERID ' + credentials["userId"]);
-    //console.log('>>login credentials password ' + credentials["password"]);
 }
 
 function proxy_target_call(response, postData, parsedUrl, request, resultModifier) {
 
     try {
-        doLogin();
+        //doLogin();
         proxy(response, postData, parsedUrl, request, function(data, clientResponse) {
             //console.log('look for Content-Type:' + util.inspect(clientResponse));
             response.writeHead(clientResponse.statusCode, clientResponse.headers);
