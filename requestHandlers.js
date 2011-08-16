@@ -230,3 +230,4 @@ exports.task = upload;
 exports.login = login;
 exports.start = start;
 exports.upload = upload;
+exports.management = upload;

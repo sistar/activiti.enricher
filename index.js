@@ -15,6 +15,7 @@ handle['/task'] = requestHandlers.task;
 handle['/login'] = requestHandlers.login;
 handle['/group'] = requestHandlers.group;
 handle['/user'] = requestHandlers.user;
+handle['/management'] = requestHandlers.management;
 
 
 
