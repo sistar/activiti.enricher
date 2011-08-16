@@ -135,7 +135,7 @@ function proxy_target_call(response, postData, parsedUrl, request, resultModifie
 
 function login(response, postData, parsedUrl, request) {
     try {
-        credentials = JSON.parse(jsonString);
+        credentials = JSON.parse(postData);
     } catch (error) {
         response.writeHead(400, {"Content-Type": "text/json"});
         response.write('INVALID JSON:');
