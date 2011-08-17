@@ -1,15 +1,17 @@
 var APIeasy = require('api-easy');
 var assert = require('assert');
-var suite = init_suite("explore Activiti", 'kermit', 'kermit');
+var userId = 'mam';
+var userPw = 'mam';
+var suite = init_suite("explore Activiti", userId, userPw);
 
 suite
-    .discuss('When logging in as known user kermit using correct credentials')
-    .post('/login', {"userId": "kermit","password": "kermit"})
+    .discuss('When logging in as known user ' +userId +' using correct credentials')
+    .post('/login', {"userId": userId,"password": userPw})
     .expect(200, {"success": true})
 
-    .discuss('When querying the user kermit')
-    .get('/user/kermit')
-    .expect(200, {"id":"kermit","firstName":"Kermit","lastName":"the Frog","email":"kermit@localhost"})
+    .discuss('When querying the user '+userId)
+    .get('/user/'+userId)
+    .expect(200, {"id":userId,"firstName":"Maja","lastName":"Mueller","email":"mas@opitz-consulting.com"})
 
     .discuss('When querying for process definitions')
     .get('/process-definitions')
@@ -48,7 +50,6 @@ suite
     .discuss('when starting the rylc process')
     .post('/process-instance', {
         "processDefinitionId":"${suite.rylc.id}",
-        "customerID":"abc",
         "startDate":"2011-05-22",
         "endDate":"2011-05-23",
         "location":"HAMBURG",
@@ -97,7 +98,7 @@ suite
             return (me.id == suite.processInstanceId);
         });
         console.log(foundProcessInstance);
-    })
+    }).export(module);
 
 
     /*
@@ -139,7 +140,7 @@ suite
      .get('/process-instances').expect(200, {"data":[
      {"id":"117","processDefinitionId":"RYLC:1:116","businessKey":null,"startTime":"2011-06-15T21:00:05.744+02:00","startUserId":"kermit"}
      ],"total":1,"start":0,"sort":"id","order":"asc","size":1})
-     */.export(module);
+     */
 
 function init_suite(suite_name, user, pw) {
     var activiti_host = 'localhost';
@@ -177,8 +178,6 @@ function init_suite(suite_name, user, pw) {
         suite.before('authorize', function(outgoing) {
             outgoing.headers['Authorization'] = 'Basic ' + new Buffer(user + ':' + pw).toString('base64');
             return outgoing;
-        })
+        });
     return suite;
-
 }
-;
