@@ -3,7 +3,9 @@ var sys = require('sys'),
     fs = require('fs'),
     path = require('path'),
     util = require('util'),
-    events = require('events');
+    events = require('events'),
+    async = require('async'),
+    processInstances = require('./processInstances');
 
 var credentials = {
     "userId": "",
@@ -33,16 +35,18 @@ var u = 'http://localhost:8080/activiti-rest/service';
 var http_methods = {'GET': rest.get, 'PUT': rest.put, 'POST': rest.post };
 
 function proxy(response, postData, parsedUrl, request, modifierFunction) {
+
+
     var targetPath = parsedUrl.pathname.replace(/\/enricher/, "").replace(/\/activiti-rest\/service\//, "/");
     console.log("Request handler '" + targetPath + "' was called. with query '" + parsedUrl.search + "' and data '" + postData + "' for method :" + request.method);
 
-    if(request.headers['authorization'] != null) {
-        var header=request.headers['authorization']||'',        // get the header
-              token=header.split(/\s+/).pop()||'',            // and the encoded auth token
-              auth=new Buffer(token, 'base64').toString(),    // convert from base64
-              parts=auth.split(/:/),                          // split on colon
-              username64=parts[0],
-              password64=parts[1];
+    if (request.headers['authorization'] != null) {
+        var header = request.headers['authorization'] || '',        // get the header
+            token = header.split(/\s+/).pop() || '',            // and the encoded auth token
+            auth = new Buffer(token, 'base64').toString(),    // convert from base64
+            parts = auth.split(/:/),                          // split on colon
+            username64 = parts[0],
+            password64 = parts[1];
         credentials.userId = username64;
         credentials.password = password64;
 
@@ -79,7 +83,9 @@ function proxy(response, postData, parsedUrl, request, modifierFunction) {
         try {
             http_methods[request.method](u + targetPath + parsedUrl.search, myOpts
             )
-                .on('complete', modifierFunction)
+                .on('complete', function(clientResponseData, clientResponse){
+                    modifierFunction(response, clientResponse,clientResponseData);
+                })
                 .on('error',
                 function(data) {
                     console.log("error with data: " + util.inspect(data));
@@ -105,23 +111,37 @@ function doLogin() {
         console.log(error);
     }
 }
+var noOpmodifierFunction = function(clientResponseData,requestCloser){
+    var modifiedData = clientResponseData;
+    requestCloser(modifiedData);
+}
 
 function proxy_target_call(response, postData, parsedUrl, request, resultModifier) {
 
     try {
-        proxy(response, postData, parsedUrl, request, function(data, clientResponse) {
-            //console.log('look for Content-Type:' + util.inspect(clientResponse));
-            response.writeHead(clientResponse.statusCode, clientResponse.headers);
-            if (resultModifier !== undefined) {
-                resultModifier(data);
-            }
+        proxy(response, postData, parsedUrl, request, function(response, clientResponse, clientResponseData) {
 
-            if (clientResponse.headers['content-type'].indexOf('/json') >= 0) {
-                response.write(JSON.stringify(data));
-            } else {
-                response.write(data);
-            }
-            response.end();
+            response.writeHead(clientResponse.statusCode, clientResponse.headers);
+
+
+            resultModifier(clientResponseData, function(modifiedData) {
+                if (clientResponse.headers['content-type'].indexOf('/json') >= 0) {
+                    try {
+                        var responseString = JSON.stringify(modifiedData);
+                        response.write(responseString);
+                    } catch (error){
+                        console.log("no JSON"+util.inspect(modifiedData));
+                        throw(error);
+                    }
+
+                } else {
+                    response.write(modifiedData);
+                }
+                response.end();
+            });
+
+
+
         });
 
     } catch (error) {
@@ -142,27 +162,27 @@ function login(response, postData, parsedUrl, request) {
         response.write(postData);
         response.end();
     }
-    proxy_target_call(response, postData, parsedUrl, request);
+    proxy_target_call(response, postData, parsedUrl, request,noOpmodifierFunction);
 }
 
 
 function upload(response, postData, parsedUrl, request) {
 
-    proxy_target_call(response, postData, parsedUrl, request);
+    proxy_target_call(response, postData, parsedUrl, request,noOpmodifierFunction);
 }
 
 var Counter = require('./counter');
 var counter = new Counter();
 
-function processInstance(response, postData, parsedUrl, request) {
 
-    var self = this;
+function processInstance(response, postData, parsedUrl, request) {
+    proxy_target_call(response, postData, parsedUrl, request,noOpmodifierFunction);
+    /*var self = this;
     self.response = response;
     self.postData = postData;
     self.parsedUrl = parsedUrl;
     self.request = request;
-    self.modifierFunction = function(d) {
-    };
+
 
     function createDelegate(object, method) {
         return function() {
@@ -176,14 +196,14 @@ function processInstance(response, postData, parsedUrl, request) {
             pO.businessKey = "ID_" + actData.maxKey;
             self.postData = JSON.stringify(pO);
             console.log('XXX' + self.postData);
-            proxy_target_call(self.response, self.postData, self.parsedUrl, self.request, self.modifierFunction);
-        } ;
+            proxy_target_call(self.response, self.postData, self.parsedUrl, self.request, noOpmodifierFunction);
+        };
 
     if (isStartProcessInstanceCall(request)) {
         counter.createUniqueBusinessKey(createDelegate(this, this.proceedFunction));
     } else {
         proxy_target_call.apply(self);
-    }
+    }                     */
 }
 
 function isStartProcessInstanceCall(request) {
@@ -192,29 +212,30 @@ function isStartProcessInstanceCall(request) {
 
 function tasks(response, postData, parsedUrl, request) {
 
-    proxy_target_call(response, postData, parsedUrl, request, function(d) {
-            for (var i in  d.data) {
-                var task = d.data[i];
+    var taskEnricherModifierFunction = function(clientResponseData, requestCloser) {
+
+            var processInstanceIds = []
+            for (var i in  clientResponseData.data) {
+                var task = clientResponseData.data[i];
+                processInstanceIds.push(task.processInstanceId);
+
                 if (task.name.indexOf("ABC AG") >= 0) {
                     task['kundenname'] = 'ABC AG';
                 } else {
                     task['kundenname'] = 'DEF GmbH';
                 }
-                var processInstanceId = task.processInstanceId;
-                var executionId = task.executionId;
-                var id = task.id;
-                var businessKey = task.businessKey;
-                task['due-date'] = '2011-06-21';
             }
 
-            d['metadata'] = [
+            clientResponseData['metadata'] = [
                 {'field-id': 'id', 'display-when': []},
                 {'field-id': 'name', 'display-format':'upper-light', 'column-title':'Kunden Name','display-when': ['landscape']},
                 {'field-id': 'kundenname', 'display-format':'middle-strong', 'column-title':'Kunden Name','display-when': ['landscape']},
                 {'field-id': 'due-date', 'display-format':'lower-light', 'column-title':'Kunden Name','display-when': ['landscape','portrait']}
             ];
-        }
-    );
+            processInstances.dueDates(20,processInstanceIds, clientResponseData ,requestCloser ) ;
+        };
+
+    proxy_target_call(response, postData, parsedUrl, request, taskEnricherModifierFunction);
 }
 
 

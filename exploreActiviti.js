@@ -71,6 +71,7 @@ suite
         });
 
         assert.isNotZero(foundTask.length);
+        console.log('ZZZ'+body) ;
         suite.before('set task_id', function(outgoing) {
             suite.task_id = foundTask[0].id;
             outgoing.uri = outgoing.uri.replace("${suite.task_id}", suite.task_id || '<<TASK_ID_MISSING>>');
