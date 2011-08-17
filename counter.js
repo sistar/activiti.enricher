@@ -35,9 +35,9 @@ Counter.prototype.createUniqueBusinessKey = function(cback) {
     var self = this;
     if (runningRequest == null){
         runningRequest = self; //sync
-        doUpdate(cback);
+        doUpdate(cback);    //async
     } else {
-        openRequests.push(cback);
+        openRequests.push(cback);   //sync
     }
 
 }

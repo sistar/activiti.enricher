@@ -57,7 +57,6 @@ suite
     }).expect(200)
     .expect('pi received',
     function(err, res, body) {
-        console.log(body);
         suite.processInstanceId = JSON.parse(body).id;
 
     }).next()

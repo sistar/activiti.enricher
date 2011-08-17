@@ -176,39 +176,43 @@ var counter = new Counter();
 
 
 function processInstance(response, postData, parsedUrl, request) {
-    proxy_target_call(response, postData, parsedUrl, request,noOpmodifierFunction);
-    /*var self = this;
+    var self = this;
     self.response = response;
     self.postData = postData;
     self.parsedUrl = parsedUrl;
     self.request = request;
 
+    var nextStep = function(){
+        proxy_target_call(self.response, self.postData, self.parsedUrl, self.request, noOpmodifierFunction);
+    }
+
+    function isStartProcessInstanceCall(request) {
+        return request.method === 'POST';
+    }
+
+    var proceedFunction = function(actData){
+        var postDataObject = JSON.parse(self.postData);
+        postDataObject.businessKey = "ID_" + actData.maxKey;
+        self.postData = JSON.stringify(postDataObject);
+        nextStep();
+    }
+
+
+    if (isStartProcessInstanceCall(request)) {
+        counter.createUniqueBusinessKey(createDelegate(this, proceedFunction));
+    } else {
+        nextStep();
+
+    }
 
     function createDelegate(object, method) {
         return function() {
             method.apply(object, arguments)
         };
     }
-
-    this.proceedFunction =
-        function (actData) {
-            pO = JSON.parse(self.postData);
-            pO.businessKey = "ID_" + actData.maxKey;
-            self.postData = JSON.stringify(pO);
-            console.log('XXX' + self.postData);
-            proxy_target_call(self.response, self.postData, self.parsedUrl, self.request, noOpmodifierFunction);
-        };
-
-    if (isStartProcessInstanceCall(request)) {
-        counter.createUniqueBusinessKey(createDelegate(this, this.proceedFunction));
-    } else {
-        proxy_target_call.apply(self);
-    }                     */
 }
 
-function isStartProcessInstanceCall(request) {
-    return request.method === 'POST';
-}
+
 
 function tasks(response, postData, parsedUrl, request) {
 
